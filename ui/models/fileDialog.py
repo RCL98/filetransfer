@@ -3,7 +3,7 @@ import os
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QPushButton, QTreeView
 
-from ui.models.treeModel import isHiddenOrSystem
+from ui.models.treeModel import FileSystem
 
 
 class FileDialog(QFileDialog):
@@ -17,6 +17,7 @@ class FileDialog(QFileDialog):
         self.openBtn.clicked.disconnect()
         self.openBtn.clicked.connect(self.openClicked)
         self.tree = self.findChild(QTreeView)
+        self.fileSystem = FileSystem()
 
     def openClicked(self):
         indexes = self.tree.selectionModel().selectedIndexes()
@@ -44,7 +45,7 @@ class FileDialog(QFileDialog):
 
     def accept(self):
         for file in self.selectedItems['#_files']:
-            if isHiddenOrSystem(file):
+            if self.fileSystem.isHiddenOrSystem(file):
                 QtWidgets.QDialog.reject(self)
         QtWidgets.QDialog.accept(self)
 

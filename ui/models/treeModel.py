@@ -20,166 +20,178 @@ if os.name == "nt":
     }
 
 
-def isHiddenOrSystem(path: str) -> bool:
-    if os.name == "nt":
-        attribute = win32api.GetFileAttributes(path)
-        result = True if attribute & (win32con.FILE_ATTRIBUTE_HIDDEN | win32con.FILE_ATTRIBUTE_SYSTEM) != 0 else False
-        return result
-    else:
-        return path.rsplit("/", 1)[-1].startswith(".")
+class FileSystem(QtCore.QObject):
+    statusBarMessage = QtCore.pyqtSignal(str)
+    progressBarValue = QtCore.pyqtSignal(int)
 
-
-def get_sizes(dictionary: dict) -> Tuple[int, int]:
-    final_size, final_number = 0, 0
-    for key in dictionary.keys():
-        if key != "size" and key != "nrFiles" and key != "#_files":
-            size, nr = get_sizes(dictionary[key])
-            final_size += size
-            final_number += nr
-    dictionary["size"] += final_size
-    dictionary["nrFiles"] += final_number
-    return dictionary["size"], dictionary["nrFiles"]
-
-
-def getSimpleTreeFileStructure(dirpath: str) -> dict:
-    root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
-    rootDict = {root: {"#_files": [], "size": 0, "nrFiles": 0}}
-    for path, subDirs, files in os.walk(dirpath):
-        folderDict = rootDict[root]
-        path_extension = path[len(dirpath):]
-        for folder in path_extension.split("\\"):
-            if folder:
-                folderDict = folderDict[folder]
-        for file in files:
-            if file not in excluded and not isHiddenOrSystem(path + "\\" + file):
-                fileSize = os.stat(path + "/" + file).st_size
-                folderDict["nrFiles"] += 1
-                folderDict["size"] += fileSize
-                folderDict["#_files"].append({"filename": file, "size": fileSize})
-        if not folderDict["#_files"]:
-            del folderDict["#_files"]
+    @staticmethod
+    def isHiddenOrSystem(path: str) -> bool:
+        if os.name == "nt":
+            attribute = win32api.GetFileAttributes(path)
+            result = True if attribute & (
+                win32con.FILE_ATTRIBUTE_HIDDEN | win32con.FILE_ATTRIBUTE_SYSTEM) != 0 else False
+            return result
         else:
-            folderDict["nrFiles"] = len(folderDict["#_files"])
+            return path.rsplit("/", 1)[-1].startswith(".")
 
-        subDirs[:] = [d for d in subDirs if d not in excluded and not isHiddenOrSystem(path + "\\" + d)]
-        for folder in subDirs:
-            folderDict[folder] = {"#_files": [], "size": 0, "nrFiles": 0}
-    return rootDict
+    def getSizes(self, dictionary: dict) -> Tuple[int, int]:
+        final_size, final_number = 0, 0
+        for key in dictionary.keys():
+            if key != "size" and key != "nrFiles" and key != "#_files":
+                size, nr = self.getSizes(dictionary[key])
+                final_size += size
+                final_number += nr
+        dictionary["size"] += final_size
+        dictionary["nrFiles"] += final_number
+        return dictionary["size"], dictionary["nrFiles"]
 
-
-def getFullFileStructure(dirpath: str) -> dict:
-    root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
-    folderDict = {"#_files": [], "size": 0, "nrFiles": 0}
-    with os.scandir(dirpath) as dirs:
-        for entry in dirs:
-            foldPath = root + "\\" + entry.name
-            if entry.name not in excluded and not isHiddenOrSystem(foldPath):
-                if entry.is_file():
-                    fileSize = os.stat(dirpath + "\\" + entry.name).st_size
+    def getSimpleTreeFileStructure(self, dirpath: str) -> dict:
+        root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
+        rootDict = {root: {"#_files": [], "size": 0, "nrFiles": 0}}
+        for path, subDirs, files in os.walk(dirpath):
+            folderDict = rootDict[root]
+            path_extension = path[len(dirpath):]
+            self.statusBarMessage.emit("Analyzing: " + path)
+            for folder in path_extension.split("\\"):
+                if folder:
+                    folderDict = folderDict[folder]
+            for file in files:
+                if file not in excluded and not self.isHiddenOrSystem(path + "\\" + file):
+                    self.statusBarMessage.emit("Analyzing: " + file)
+                    fileSize = os.stat(path + "/" + file).st_size
                     folderDict["nrFiles"] += 1
                     folderDict["size"] += fileSize
-                    folderDict["#_files"].append({"filename": entry.name, "size": fileSize})
-                elif entry.is_dir():
-                    try:
-                        folderDict[entry.name] = getFullFileStructure(foldPath)
-                        folderDict["size"] += folderDict[entry.name]["size"]
-                        folderDict["nrFiles"] += folderDict[entry.name]["nrFiles"]
-                    except WindowsError:
-                        pass
-        if not folderDict["#_files"]:
-            del folderDict["#_files"]
-    return folderDict
-
-
-def checkIntegrity(tree: dict, inconsistencies: list, parent: Path) -> (int, int):
-    actualSize, actualNrFiles = 0, 0
-    it = 0
-    while it < len(tree.get('#_files', [])):
-        fileObj = parent / tree['#_files'][it]['filename']
-        if fileObj.is_file():
-            size = fileObj.stat().st_size
-            if size != tree['#_files'][it]['size']:
-                inconsistencies.append((fileObj.resolve().__str__(), 'szf', size, tree['#_files'][it]['size']))
-                tree['#_files'][it]['size'] = size
-            actualSize += size
-            actualNrFiles += 1
-            it += 1
-        else:
-            inconsistencies.append((fileObj.resolve().__str__(), 'nef'))
-            del tree['#_files'][it]
-    for key in list(tree.keys()):
-        if key not in ['size', 'nrFiles', '#_files']:
-            folder = parent / key
-            if folder.is_dir():
-                size, nrFiles = checkIntegrity(tree[key], inconsistencies, folder)
-                if size != tree[key]['size']:
-                    inconsistencies.append((folder.resolve().__str__(), 'szd', size, tree[key]['size']))
-                    tree[key]['size'] = size
-                if nrFiles != tree[key]['nrFiles']:
-                    inconsistencies.append((folder.resolve().__str__(), 'nrd', nrFiles, tree[key]['nrFiles']))
-                    tree[key]['nrFiles'] = nrFiles
-                actualSize += size
-                actualNrFiles += nrFiles
+                    folderDict["#_files"].append({"filename": file, "size": fileSize})
+            if not folderDict["#_files"]:
+                del folderDict["#_files"]
             else:
-                inconsistencies.append((folder.resolve().__str__(), 'ned'))
+                folderDict["nrFiles"] = len(folderDict["#_files"])
+            subDirs[:] = [d for d in subDirs if d not in excluded and not self.isHiddenOrSystem(path + "\\" + d)]
+            for folder in subDirs:
+                folderDict[folder] = {"#_files": [], "size": 0, "nrFiles": 0}
+        return rootDict
 
-    return actualSize, actualNrFiles
-
-
-def checkTreeIntegrity(tree: dict) -> list:
-    actualSize, actualNrFiles, inconsistencies = 0, 0, []
-    for key in tree.keys():
-        if key != 'size' and key != 'nrFiles':
-            parentPath = key if key != '<Files>' else ''
-            size, nrFiles = checkIntegrity(tree[key], inconsistencies, Path(parentPath))
-            if size != tree[key]['size']:
-                inconsistencies.append((key, 'szd', size, tree[key]['size']))
-                tree[key]['size'] = size
-            if nrFiles != tree[key]['nrFiles']:
-                inconsistencies.append((key, 'nrd', nrFiles, tree[key]['nrFiles']))
-                tree[key]['nrFiles'] = nrFiles
-            actualSize += size
-            actualNrFiles += nrFiles
-    if actualSize != tree['size']:
-        inconsistencies.append(('All', 'szd', actualSize, tree['size']))
-        tree['size'] = actualSize
-    if actualNrFiles != tree['nrFiles']:
-        inconsistencies.append(('All', 'nrd', actualNrFiles, tree['nrFiles']))
-        tree['nrFiles'] = actualNrFiles
-    return inconsistencies
-
-
-def getFileStructure(dirpath: str, withSize=False) -> dict:
-    if withSize:
+    def getFullFileStructure(self, dirpath: str) -> dict:
         root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
-        return {root: getFullFileStructure(dirpath)}
-    return getSimpleTreeFileStructure(dirpath)
+        folderDict = {"#_files": [], "size": 0, "nrFiles": 0}
+        self.statusBarMessage.emit("Analyzing: " + dirpath)
+        with os.scandir(dirpath) as dirs:
+            for entry in dirs:
+                foldPath = root + "\\" + entry.name
+                if entry.name not in excluded and not self.isHiddenOrSystem(foldPath):
+                    if entry.is_file():
+                        self.statusBarMessage.emit("Analyzing: " + entry.name)
+                        fileSize = os.stat(dirpath + "\\" + entry.name).st_size
+                        folderDict["nrFiles"] += 1
+                        folderDict["size"] += fileSize
+                        folderDict["#_files"].append({"filename": entry.name, "size": fileSize})
+                    elif entry.is_dir():
+                        try:
+                            folderDict[entry.name] = self.getFullFileStructure(foldPath)
+                            folderDict["size"] += folderDict[entry.name]["size"]
+                            folderDict["nrFiles"] += folderDict[entry.name]["nrFiles"]
+                        except WindowsError:
+                            pass
+            if not folderDict["#_files"]:
+                del folderDict["#_files"]
+        return folderDict
 
+    def checkIntegrity(self, tree: dict, inconsistencies: list, parent: Path) -> (int, int):
+        actualSize, actualNrFiles = 0, 0
+        it = 0
+        while it < len(tree.get('#_files', [])):
+            fileObj = parent / tree['#_files'][it]['filename']
+            if fileObj.is_file():
+                self.statusBarMessage.emit("Checking: " + fileObj.resolve().__str__())
+                size = fileObj.stat().st_size
+                if size != tree['#_files'][it]['size']:
+                    inconsistencies.append((fileObj.resolve().__str__(), 'szf', size, tree['#_files'][it]['size']))
+                    tree['#_files'][it]['size'] = size
+                actualSize += size
+                actualNrFiles += 1
+                it += 1
+            else:
+                inconsistencies.append((fileObj.resolve().__str__(), 'nef'))
+                del tree['#_files'][it]
+        for key in list(tree.keys()):
+            if key not in ['size', 'nrFiles', '#_files']:
+                folder = parent / key
+                if folder.is_dir():
+                    self.statusBarMessage.emit("Checking: " + folder.resolve().__str__())
+                    size, nrFiles = self.checkIntegrity(tree[key], inconsistencies, folder)
+                    if size != tree[key]['size']:
+                        inconsistencies.append((folder.resolve().__str__(), 'szd', size, tree[key]['size']))
+                        tree[key]['size'] = size
+                    if nrFiles != tree[key]['nrFiles']:
+                        inconsistencies.append((folder.resolve().__str__(), 'nrd', nrFiles, tree[key]['nrFiles']))
+                        tree[key]['nrFiles'] = nrFiles
+                    actualSize += size
+                    actualNrFiles += nrFiles
+                else:
+                    inconsistencies.append((folder.resolve().__str__(), 'ned'))
+        return actualSize, actualNrFiles
 
-def treeIterator(currentItem):
-    yield currentItem
-    try:
-        if currentItem.isEpanded():
-            for child in currentItem.childItems:
-                yield from treeIterator(child)
-    except AttributeError:
-        pass
+    def checkTreeIntegrity(self, tree: dict) -> list:
+        actualSize, actualNrFiles, inconsistencies, treeLength = 0, 0, [], len(tree) - 2
+        if treeLength > 0:
+            # progress = 1
+            for key in tree.keys():
+                if key != 'size' and key != 'nrFiles':
+                    self.statusBarMessage.emit("Checking: " + key)
+                    # if progressBar and statusBar:
+                    #     statusBar.showMessage("Checking: " + key)
+                    #     progressBar.setValue(int(progress / treeLength * 100))
+                    #     progress += 1
+                    parentPath = key if key != '<Files>' else ''
+                    size, nrFiles = self.checkIntegrity(tree[key], inconsistencies, Path(parentPath))
+                    if size != tree[key]['size']:
+                        inconsistencies.append((key, 'szd', size, tree[key]['size']))
+                        tree[key]['size'] = size
+                    if nrFiles != tree[key]['nrFiles']:
+                        inconsistencies.append((key, 'nrd', nrFiles, tree[key]['nrFiles']))
+                        tree[key]['nrFiles'] = nrFiles
+                    actualSize += size
+                    actualNrFiles += nrFiles
+            if actualSize != tree['size']:
+                inconsistencies.append(('All', 'szd', actualSize, tree['size']))
+                tree['size'] = actualSize
+            if actualNrFiles != tree['nrFiles']:
+                inconsistencies.append(('All', 'nrd', actualNrFiles, tree['nrFiles']))
+                tree['nrFiles'] = actualNrFiles
+        else:
+            inconsistencies.append('NTD')
+        return inconsistencies
 
+    def getFileStructure(self, dirpath: str, withSize=False) -> dict:
+        if withSize:
+            root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
+            return {root: self.getFullFileStructure(dirpath)}
+        return self.getSimpleTreeFileStructure(dirpath)
 
-def updateSizeAndFiles(branch: dict, path: list, size: int, nrFiles: int, multiplier=1) -> dict:
-    branch["size"] += multiplier * size
-    branch["nrFiles"] += multiplier * nrFiles
-    for key in path:
-        branch = branch[key]
+    def treeIterator(self, currentItem):
+        yield currentItem
+        try:
+            if currentItem.isEpanded():
+                for child in currentItem.childItems:
+                    yield from self.treeIterator(child)
+        except AttributeError:
+            pass
+
+    @staticmethod
+    def updateSizeAndFiles(branch: dict, path: list, size: int, nrFiles: int, multiplier=1) -> dict:
         branch["size"] += multiplier * size
         branch["nrFiles"] += multiplier * nrFiles
-    return branch
+        for key in path:
+            branch = branch[key]
+            branch["size"] += multiplier * size
+            branch["nrFiles"] += multiplier * nrFiles
+        return branch
 
-
-def treeWalk(tree: dict, path: list) -> dict:
-    for key in path:
-        tree = tree[key]
-    return tree
+    @staticmethod
+    def treeWalk(tree: dict, path: list) -> dict:
+        for key in path:
+            tree = tree[key]
+        return tree
 
 
 class TreeModelFile(QAbstractItemModel):
@@ -195,7 +207,7 @@ class TreeModelFile(QAbstractItemModel):
         self.load_treeDict()
         self.rootItem = FolderItem(path=[], treeInput=treeInput)
         self.rootItem.load_children()
-        # self.selectedItems = set()
+        self.selectedItemsLength = 0
 
     def load_treeDict(self):
         with open(self.treeInput, "r") as jsonFile:
@@ -222,12 +234,16 @@ class TreeModelFile(QAbstractItemModel):
     def setData(self, index, value, role=Qt.EditRole):
         if role == Qt.CheckStateRole:
             item = index.internalPointer()
-            item.setCheckedState(value)
+            self.selectedItemsLength += item.setCheckedState(value)
+            # print(self.selectedItemsLength)
             self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         return True
 
     def getRootItem(self) -> FolderItem:
         return self.rootItem
+
+    def selectLength(self) -> int:
+        return self.selectedItemsLength
 
     def canFetchMore(self, index):
         if not index.isValid():
@@ -237,7 +253,8 @@ class TreeModelFile(QAbstractItemModel):
 
     def fetchMore(self, index):
         item = index.internalPointer()
-        item.load_children()
+        self.selectedItemsLength += item.load_children()
+        # print(self.selectedItemsLength)
 
     def flags(self, index):
         if not index.isValid():

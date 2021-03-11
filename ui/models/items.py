@@ -61,10 +61,14 @@ class FileItem:
             return "1 file"
 
     def setCheckedState(self, value):
+        selectedItems = 0
         if value == 2:
             self.checkedState = True
+            selectedItems += 1
         else:
             self.checkedState = False
+            selectedItems -= 1
+        return selectedItems
         # return '/'.join(self.parentItem.path) + '/' + self.itemData[0] + self.itemData[1]
 
     def getCheckedState(self):
@@ -115,7 +119,7 @@ class FolderItem:
 
     def load_children(self):
         self.childItems = []
-        selectedItems = []
+        selectedItems = 0
         if self.path:
             child_dirs = []
             folder_content = self.get_dict_from_path()
@@ -125,6 +129,7 @@ class FolderItem:
                         fileItem = FileItem(file['filename'], file['size'], parent=self)
                         if self.getCheckedState() == Qt.Checked:
                             fileItem.setCheckedState(2)
+                            selectedItems += 1
                         self.childItems.append(fileItem)
                 elif folder != 'size' and folder != 'nrFiles':
                     child_dirs.append(folder)
@@ -138,9 +143,10 @@ class FolderItem:
                 folderItem = FolderItem(path=child_path, parent=self, treeInput=self.treeInput)
                 if self.getCheckedState() == Qt.Checked:
                     folderItem.setCheckedState(2)
+                    selectedItems += 1
                 self.childItems.append(folderItem)
         self.is_loaded = True
-        # return selectedItems
+        return selectedItems
 
     def child(self, row):
         return self.childItems[row]
@@ -159,13 +165,18 @@ class FolderItem:
         return 4
 
     def setCheckedState(self, value):
+        selectedItems = 0
         if value == 2:
             self.checkedState = True
+            selectedItems += 1
         else:
             self.checkedState = False
+            selectedItems -= 1
         for child in self.childItems:
-            child.setCheckedState(value)
-        # return '/'.join(self.path)
+            if child.getCheckedState() != self.getCheckedState():
+                selectedItems += child.setCheckedState(value)
+        return selectedItems
+        #return '/'.join(self.path)
 
     def toolTip(self, column):
         if column == 0:
