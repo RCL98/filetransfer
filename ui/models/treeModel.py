@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 from pathlib import Path
@@ -6,7 +7,7 @@ from typing import Tuple
 from PyQt5 import QtCore
 from PyQt5.QtCore import QAbstractItemModel, Qt, QModelIndex
 
-from ui.models.items import FolderItem
+from items import FolderItem, formatSize
 
 if os.name == "nt":
     import win32api
@@ -37,17 +38,17 @@ class FileSystem(QtCore.QObject):
     def getSizes(self, dictionary: dict) -> Tuple[int, int]:
         final_size, final_number = 0, 0
         for key in dictionary.keys():
-            if key != "size" and key != "nrFiles" and key != "#_files":
+            if key != "#_size" and key != "#_nrFiles" and key != "#_files":
                 size, nr = self.getSizes(dictionary[key])
                 final_size += size
                 final_number += nr
-        dictionary["size"] += final_size
-        dictionary["nrFiles"] += final_number
-        return dictionary["size"], dictionary["nrFiles"]
+        dictionary["#_size"] += final_size
+        dictionary["#_nrFiles"] += final_number
+        return dictionary["#_size"], dictionary["#_nrFiles"]
 
     def getSimpleTreeFileStructure(self, dirpath: str) -> dict:
         root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
-        rootDict = {root: {"#_files": [], "size": 0, "nrFiles": 0}}
+        rootDict = {root: {"#_files": [], "#_size": 0, "#_nrFiles": 0}}
         for path, subDirs, files in os.walk(dirpath):
             folderDict = rootDict[root]
             path_extension = path[len(dirpath):]
@@ -59,42 +60,52 @@ class FileSystem(QtCore.QObject):
                 if file not in excluded and not self.isHiddenOrSystem(path + "\\" + file):
                     self.statusBarMessage.emit("Analyzing: " + file)
                     fileSize = os.stat(path + "/" + file).st_size
-                    folderDict["nrFiles"] += 1
-                    folderDict["size"] += fileSize
-                    folderDict["#_files"].append({"filename": file, "size": fileSize})
-            if not folderDict["#_files"]:
-                del folderDict["#_files"]
+                    folderDict["#_nrFiles"] += 1
+                    folderDict["#_size"] += fileSize
+                    folderDict["#_files"].append({"filename": file, "#_size": fileSize})
+            # if not folderDict["#_files"]:
+            #     del folderDict["#_files"]
             else:
-                folderDict["nrFiles"] = len(folderDict["#_files"])
+                folderDict["#_nrFiles"] = len(folderDict["#_files"])
             subDirs[:] = [d for d in subDirs if d not in excluded and not self.isHiddenOrSystem(path + "\\" + d)]
             for folder in subDirs:
-                folderDict[folder] = {"#_files": [], "size": 0, "nrFiles": 0}
+                folderDict[folder] = {"#_files": [], "#_size": 0, "#_nrFiles": 0}
         return rootDict
 
-    def getFullFileStructure(self, dirpath: str) -> dict:
+    def getFullFileStructure(self, dirpath: str, nrDirs=1) -> dict:
         root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
-        folderDict = {"#_files": [], "size": 0, "nrFiles": 0}
-        self.statusBarMessage.emit("Analyzing: " + dirpath)
+        folderDict = {"#_files": [], "#_size": 0, "#_nrFiles": 0}
+        self.statusBarMessage.emit("Analyzing: " + root)
+        currentDirs = 1
         with os.scandir(dirpath) as dirs:
             for entry in dirs:
                 foldPath = root + "\\" + entry.name
                 if entry.name not in excluded and not self.isHiddenOrSystem(foldPath):
                     if entry.is_file():
-                        self.statusBarMessage.emit("Analyzing: " + entry.name)
                         fileSize = os.stat(dirpath + "\\" + entry.name).st_size
-                        folderDict["nrFiles"] += 1
-                        folderDict["size"] += fileSize
-                        folderDict["#_files"].append({"filename": entry.name, "size": fileSize})
+                        folderDict["#_nrFiles"] += 1
+                        folderDict["#_size"] += fileSize
+                        folderDict["#_files"].append({"filename": entry.name, "#_size": fileSize})
+                        self.statusBarMessage.emit("Analyzing: " + root + entry.name)
                     elif entry.is_dir():
                         try:
-                            folderDict[entry.name] = self.getFullFileStructure(foldPath)
-                            folderDict["size"] += folderDict[entry.name]["size"]
-                            folderDict["nrFiles"] += folderDict[entry.name]["nrFiles"]
+                            folderDict[entry.name] = self.getFullFileStructure(foldPath, nrDirs)
+                            folderDict["#_size"] += folderDict[entry.name]["#_size"]
+                            folderDict["#_nrFiles"] += folderDict[entry.name]["#_nrFiles"]
+                            currentDirs += 1
                         except WindowsError:
                             pass
-            if not folderDict["#_files"]:
-                del folderDict["#_files"]
+            # if not folderDict["#_files"]:
+            #     del folderDict["#_files"]
+        nrDirs += currentDirs
+        self.progressBarValue.emit(int(currentDirs / nrDirs * 10))
         return folderDict
+
+    def getFileStructure(self, dirpath: str, withSize=False) -> dict:
+        if withSize:
+            root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
+            return {root: self.getFullFileStructure(dirpath)}
+        return self.getSimpleTreeFileStructure(dirpath)
 
     def checkIntegrity(self, tree: dict, inconsistencies: list, parent: Path) -> (int, int):
         actualSize, actualNrFiles = 0, 0
@@ -162,16 +173,10 @@ class FileSystem(QtCore.QObject):
             inconsistencies.append('NTD')
         return inconsistencies
 
-    def getFileStructure(self, dirpath: str, withSize=False) -> dict:
-        if withSize:
-            root = dirpath if dirpath[-1] != "\\" else dirpath[:-1]
-            return {root: self.getFullFileStructure(dirpath)}
-        return self.getSimpleTreeFileStructure(dirpath)
-
     def treeIterator(self, currentItem):
         yield currentItem
         try:
-            if currentItem.isEpanded():
+            if currentItem.isExpanded():
                 for child in currentItem.childItems:
                     yield from self.treeIterator(child)
         except AttributeError:
@@ -179,12 +184,12 @@ class FileSystem(QtCore.QObject):
 
     @staticmethod
     def updateSizeAndFiles(branch: dict, path: list, size: int, nrFiles: int, multiplier=1) -> dict:
-        branch["size"] += multiplier * size
-        branch["nrFiles"] += multiplier * nrFiles
+        branch["#_size"] += multiplier * size
+        branch["#_nrFiles"] += multiplier * nrFiles
         for key in path:
             branch = branch[key]
-            branch["size"] += multiplier * size
-            branch["nrFiles"] += multiplier * nrFiles
+            branch["#_size"] += multiplier * size
+            branch["#_nrFiles"] += multiplier * nrFiles
         return branch
 
     @staticmethod
@@ -195,26 +200,34 @@ class FileSystem(QtCore.QObject):
 
 
 class TreeModelFile(QAbstractItemModel):
-    def __init__(self, parent=None, columns=None, treeInput=None):
+    selectedSizeSignal = QtCore.pyqtSignal(str)
+    selectedFilesSignal = QtCore.pyqtSignal(int)
+
+    def __init__(self, parent=None, columns=None, treeInput=None, foldIcon=None, fileIcon=None):
         super(TreeModelFile, self).__init__(parent)
         if columns is None:
             columns = ["Name", "File type", "Size", "Contains"]
         assert treeInput is not None, "treeInput must be a valid file!"
 
         self.columnNames = columns
-        self.treeDict = {}
+        # self.treeDict = {}
         self.treeInput = treeInput
-        self.load_treeDict()
-        self.rootItem = FolderItem(path=[], treeInput=treeInput)
+        self.foldIcon = foldIcon
+        self.fileIcon = fileIcon
+        # self.load_treeDict()
+        self.rootItem = FolderItem(path=[], treeInput=treeInput, foldIcon=self.foldIcon, fileIcon=self.fileIcon)
         self.rootItem.load_children()
-        self.selectedItemsLength = 0
+        self.selectedSize = 0
+        self.selectedFiles = 0
 
-    def load_treeDict(self):
-        with open(self.treeInput, "r") as jsonFile:
-            self.treeDict = json.load(jsonFile)
+    # def load_treeDict(self):
+    #     with open(self.treeInput, "r") as jsonFile:
+    #         self.treeDict = json.load(jsonFile)
+    #     self.selectedFilesSignal.emit(0)
+    #     self.selectedSizeSignal.emit(0)
 
     def columnCount(self, parent=None):
-        return 4
+        return len(self.columnNames)
 
     def data(self, index, role=None):
         if not index.isValid():
@@ -228,22 +241,27 @@ class TreeModelFile(QAbstractItemModel):
             return item.getCheckedState()
         elif role == Qt.ToolTipRole:
             return item.toolTip(index.column())
+        elif role == Qt.DecorationRole and index.column() == 0:
+            return item.icon
         else:
             return None
 
     def setData(self, index, value, role=Qt.EditRole):
         if role == Qt.CheckStateRole:
             item = index.internalPointer()
-            self.selectedItemsLength += item.setCheckedState(value)
-            # print(self.selectedItemsLength)
+            size, files = item.setCheckedState(value)
+            self.selectedSize += size
+            self.selectedFiles += files
+            self.selectedSizeSignal.emit(formatSize(self.selectedSize))
+            self.selectedFilesSignal.emit(self.selectedFiles)
             self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         return True
 
     def getRootItem(self) -> FolderItem:
         return self.rootItem
 
-    def selectLength(self) -> int:
-        return self.selectedItemsLength
+    def selectLength(self) -> (int, int):
+        return self.selectedSize, self.selectedFiles
 
     def canFetchMore(self, index):
         if not index.isValid():
@@ -253,8 +271,7 @@ class TreeModelFile(QAbstractItemModel):
 
     def fetchMore(self, index):
         item = index.internalPointer()
-        self.selectedItemsLength += item.load_children()
-        # print(self.selectedItemsLength)
+        item.load_children()
 
     def flags(self, index):
         if not index.isValid():
@@ -305,3 +322,50 @@ class TreeModelFile(QAbstractItemModel):
             parentItem = parent.internalPointer()
 
         return parentItem.childCount()
+
+    def getTotalSizeFiles(self):
+        with open(self.treeInput, "r") as jsonFile:
+            treeDict = json.load(jsonFile)
+        return formatSize(treeDict["#_size"]), treeDict["#_nrFiles"]
+
+    def __fullSearch(self, search: str, folder: dict):
+        newBranch = {"#_size": 0, "#_nrFiles": 0, "#_files": []}
+        for file in folder["#_files"]:
+            if search in file["filename"]:
+                newBranch["#_files"].append(file)
+                newBranch["#_size"] += file["#_size"]
+                newBranch["#_nrFiles"] += 1
+        for subFold in folder.keys():
+            if subFold not in ["#_size", "#_nrFiles", "#_files"]:
+                if search in subFold:
+                    newBranch[subFold] = copy.deepcopy(folder[subFold])
+                else:
+                    branch = self.__fullSearch(search, folder[subFold])
+                    if branch["#_size"] != 0:
+                        newBranch[subFold] = branch
+                        newBranch["#_size"] += branch["#_size"]
+                        newBranch["#_nrFiles"] += branch["#_nrFiles"]
+        return newBranch
+
+    def filterTree(self, search: str):
+        newDict = {"#_size": 0, "#_nrFiles": 0, "<Files>": {"#_size": 0, "#_nrFiles": 0, "#_files": []}}
+        search = search.lower()
+        with open(self.treeInput, "r") as treeFile:
+            treeDict = json.load(treeFile)
+        for file in treeDict["<Files>"]["#_files"]:
+            if search in file['filename']:
+                newDict["<Files>"]["#_files"].append(file)
+                newDict["<Files>"]["#_size"] += file["#_size"]
+                newDict["<Files>"]["#_nrFiles"] += 1
+        for fold in treeDict.keys():
+            if fold not in ["#_size", "#_nrFiles", "<Files>"]:
+                if search in fold:
+                    newDict[fold] = copy.deepcopy(treeDict[fold])
+                else:
+                    branch = self.__fullSearch(search, treeDict[fold])
+                    if branch["#_size"] != 0:
+                        newDict[fold] = branch
+                if newDict.get(fold, None) is not None:
+                    newDict["#_size"] += newDict[fold]["#_size"]
+                    newDict["#_nrFiles"] += newDict[fold]["#_nrFiles"]
+        return newDict

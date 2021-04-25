@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>downloadsForm</class>
+ <widget class="QWidget" name="downloadsForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>907</width>
+    <height>610</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0">
+    <widget class="QFrame" name="downTableFrame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QTableWidget" name="downsTable">
+        <row>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>2</string>
+         </property>
+        </row>
+        <column>
+         <property name="text">
+          <string>Name</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Dimension</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Progress</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Down speed</string>
+         </property>
+        </column>
+        <item row="0" column="0">
+         <property name="text">
+          <string>User1</string>
+         </property>
+        </item>
+        <item row="0" column="1">
+         <property name="text">
+          <string>54,6 GB</string>
+         </property>
+        </item>
+        <item row="0" column="2">
+         <property name="text">
+          <string>76%</string>
+         </property>
+        </item>
+        <item row="0" column="3">
+         <property name="text">
+          <string>34 Mb/s</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QFrame" name="detailsFrame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="generalTab">
+         <attribute name="icon">
+          <iconset resource="../icons/icons.qrc">
+           <normaloff>:/windowIcons/fileIcon</normaloff>:/windowIcons/fileIcon</iconset>
+         </attribute>
+         <attribute name="title">
+          <string>General</string>
+         </attribute>
+        </widget>
+        <widget class="QWidget" name="contenTab">
+         <attribute name="icon">
+          <iconset resource="../icons/icons.qrc">
+           <normaloff>:/buttonIcons/openIcon</normaloff>:/buttonIcons/openIcon</iconset>
+         </attribute>
+         <attribute name="title">
+          <string>Content</string>
+         </attribute>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../icons/icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

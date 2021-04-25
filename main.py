@@ -1,16 +1,41 @@
-# This is a sample Python script.
+import sys
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from PyQt5 import QtWidgets
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+from ui.logic.startWindowLogic import StartWindow
+from ui.logic.mainWindowLogic import MainWindow
 
 
-# Press the green button in the gutter to run the script.
+class AppInterface:
+    def __init__(self):
+        self.app = QtWidgets.QApplication(sys.argv)
+        self.window = QtWidgets.QMainWindow()
+        self.accepted = False
+        self.startWindow = None
+        self.mainWindow = None
+
+    def accept(self, t: bool):
+        self.accepted = t
+
+    def startApp(self):
+        self.startWindow = StartWindow(self.window)
+        self.startWindow.acceptState.connect(self.accept)
+        self.window.showMaximized()
+        resp = self.app.exec_()
+        if resp == 0:
+            if self.accepted:
+                del self.startWindow
+                self.mainApp()
+        else:
+            raise Exception(f"Something bad happened to the starting window! {resp}")
+
+    def mainApp(self):
+        self.window = QtWidgets.QMainWindow()
+        self.mainWindow = MainWindow(self.window)
+        self.window.showMaximized()
+        resp = self.app.exec_()
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    app = AppInterface()
+    app.startApp()

@@ -3,26 +3,34 @@ from os.path import splitext
 
 from PyQt5.QtCore import Qt
 
-def formatSize(size: int) -> str:
-    sizeString = ""
+
+def formatSize(sizeValue: int) -> str:
+    isNegative = ""
+    if sizeValue < 0:
+        size = abs(sizeValue)
+        isNegative = "-"
+    else:
+        size = sizeValue
     if size < 1024:
         sizeString = f"{size:.2f} bytes"
-    elif size >= 1024 and size < 1024 ** 2:
+    elif 1024 <= size < 1024 ** 2:
         sizeString = f"{size / 1024:.2f} KB"
-    elif size >= 1024 ** 2 and size < 1024 ** 3:
+    elif 1024 ** 2 <= size < 1024 ** 3:
         sizeString = f"{size / 1024 ** 2:.2f} MB"
-    elif size >= 1024 ** 4 and size < 1024 ** 5:
+    elif 1024 ** 3 <= size < 1024 ** 4:
         sizeString = f"{size / 1024 ** 3:.2f} GB"
     else:
         sizeString = f"{size / 1024 ** 4:.2f} TB"
-    return sizeString
+    return isNegative + sizeString
+
 
 class FileItem:
-    def __init__(self, filename, size, parent=None):
+    def __init__(self, filename, size, icon=None, parent=None):
         self.parentItem = parent
         self.fileName, self.extension = splitext(filename)
         self.size = size
         self.checkedState = False
+        self.icon = icon
 
     @staticmethod
     def childCount():
@@ -61,15 +69,16 @@ class FileItem:
             return "1 file"
 
     def setCheckedState(self, value):
-        selectedItems = 0
+        selectedSize, selectedFiles = 0, 0
         if value == 2:
             self.checkedState = True
-            selectedItems += 1
+            selectedSize += 1
+            selectedFiles += 1
         else:
             self.checkedState = False
-            selectedItems -= 1
-        return selectedItems
-        # return '/'.join(self.parentItem.path) + '/' + self.itemData[0] + self.itemData[1]
+            selectedSize -= 1
+            selectedFiles -= 1
+        return selectedSize, selectedFiles
 
     def getCheckedState(self):
         if self.checkedState:
@@ -77,12 +86,19 @@ class FileItem:
         else:
             return Qt.Unchecked
 
-    def __itemType__(self):
+    @staticmethod
+    def __itemType__():
         return 0
+
+    def getIcon(self):
+        return self.icon
+
+    def setIcon(self, icon):
+        self.icon = icon
 
 
 class FolderItem:
-    def __init__(self, path=None, parent=None, treeInput=None):
+    def __init__(self, path=None, parent=None, treeInput=None, foldIcon=None, fileIcon=None):
         if path is None:
             path = []
         self.treeInput = treeInput
@@ -93,17 +109,20 @@ class FolderItem:
         self.nrFiles = 0
         self.checkedState = False
         self.childItems = []
+        self.icon = foldIcon
+        self.fileIcon = fileIcon
 
         if self.path:
             folder_content = self.get_dict_from_path()
-            if folder_content.get('#_files', False):
+            if folder_content.get("#_files", False):
                 self.n_children = len(
                     folder_content['#_files']) + len(folder_content) - 3
-            else:
+            else:   # TODO: more efficient
                 self.n_children = len(folder_content)
-                self.n_children = self.n_children - 2 if folder_content.get('#_files', False) == False else self.n_children - 3 # TODO: more efficient
-            self.size = folder_content['size']
-            self.nrFiles = folder_content['nrFiles']
+                self.n_children = self.n_children - 2 if folder_content.get('#_files',
+                                                                            False) == False else self.n_children - 3
+            self.size = folder_content["#_size"]
+            self.nrFiles = folder_content["#_nrFiles"]
         else:
             with open(self.treeInput, "r") as jFile:  # TODO: handle files at root level
                 self.n_children = len(json.load(jFile)) - 2
@@ -119,34 +138,31 @@ class FolderItem:
 
     def load_children(self):
         self.childItems = []
-        selectedItems = 0
         if self.path:
             child_dirs = []
             folder_content = self.get_dict_from_path()
             for folder in folder_content.keys():
                 if folder == '#_files':
                     for file in folder_content['#_files']:
-                        fileItem = FileItem(file['filename'], file['size'], parent=self)
+                        fileItem = FileItem(file['filename'], file["#_size"], parent=self, icon=self.fileIcon)
                         if self.getCheckedState() == Qt.Checked:
                             fileItem.setCheckedState(2)
-                            selectedItems += 1
                         self.childItems.append(fileItem)
-                elif folder != 'size' and folder != 'nrFiles':
+                elif folder != "#_size" and folder != "#_nrFiles":
                     child_dirs.append(folder)
         else:  # special case of root node. TODO: handle files at root level
             with open(self.treeInput, "r") as jFile:
                 child_dirs = json.load(jFile).keys()
 
         for child_dir in child_dirs:
-            if child_dir != 'size' and child_dir != 'nrFiles':
+            if child_dir != "#_size" and child_dir != "#_nrFiles":
                 child_path = self.path + [child_dir]
-                folderItem = FolderItem(path=child_path, parent=self, treeInput=self.treeInput)
+                folderItem = FolderItem(path=child_path, parent=self, treeInput=self.treeInput,
+                                        foldIcon=self.icon, fileIcon=self.fileIcon)
                 if self.getCheckedState() == Qt.Checked:
                     folderItem.setCheckedState(2)
-                    selectedItems += 1
                 self.childItems.append(folderItem)
         self.is_loaded = True
-        return selectedItems
 
     def child(self, row):
         return self.childItems[row]
@@ -154,10 +170,11 @@ class FolderItem:
     def childCount(self):
         return self.n_children
 
-    def isEpanded(self):
+    def isExpanded(self):
         return self.is_loaded == True
 
-    def __itemType__(self):
+    @staticmethod
+    def __itemType__():
         return 1
 
     @staticmethod
@@ -165,18 +182,19 @@ class FolderItem:
         return 4
 
     def setCheckedState(self, value):
-        selectedItems = 0
+        selectedSize, selectedFiles = 0, 0
         if value == 2:
             self.checkedState = True
-            selectedItems += 1
+            selectedSize += self.size
+            selectedFiles += self.nrFiles
         else:
             self.checkedState = False
-            selectedItems -= 1
+            selectedSize -= self.size
+            selectedFiles -= self.nrFiles
         for child in self.childItems:
             if child.getCheckedState() != self.getCheckedState():
-                selectedItems += child.setCheckedState(value)
-        return selectedItems
-        #return '/'.join(self.path)
+                _, _ = child.setCheckedState(value)
+        return selectedSize, selectedFiles
 
     def toolTip(self, column):
         if column == 0:
@@ -216,3 +234,13 @@ class FolderItem:
             return self.parentItem.childItems.index(self)
         return 0
 
+    def setIcon(self, icon):
+        self.icon = icon
+
+    def getIcon(self):
+        return self.icon
+
+
+# class TableRowItem:
+#     def __init__(self, rowData: tuple):
+#         self.data = [rowData[0], ]
