@@ -9,7 +9,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import FileTransferClient.icons.icons
+import icons.icons
 
 class Ui_StartWindow(object):
     def setupUi(self, StartWindow):

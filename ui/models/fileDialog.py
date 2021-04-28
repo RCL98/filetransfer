@@ -3,7 +3,7 @@ import os
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QPushButton, QTreeView
 
-from treeModel import FileSystem
+from .treeModel import FileSystem
 
 
 class FileDialog(QFileDialog):

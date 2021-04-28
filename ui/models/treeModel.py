@@ -7,7 +7,7 @@ from typing import Tuple
 from PyQt5 import QtCore
 from PyQt5.QtCore import QAbstractItemModel, Qt, QModelIndex
 
-from items import FolderItem, formatSize
+from . import items
 
 if os.name == "nt":
     import win32api
@@ -215,7 +215,7 @@ class TreeModelFile(QAbstractItemModel):
         self.foldIcon = foldIcon
         self.fileIcon = fileIcon
         # self.load_treeDict()
-        self.rootItem = FolderItem(path=[], treeInput=treeInput, foldIcon=self.foldIcon, fileIcon=self.fileIcon)
+        self.rootItem = items.FolderItem(path=[], treeInput=treeInput, foldIcon=self.foldIcon, fileIcon=self.fileIcon)
         self.rootItem.load_children()
         self.selectedSize = 0
         self.selectedFiles = 0
@@ -252,12 +252,12 @@ class TreeModelFile(QAbstractItemModel):
             size, files = item.setCheckedState(value)
             self.selectedSize += size
             self.selectedFiles += files
-            self.selectedSizeSignal.emit(formatSize(self.selectedSize))
+            self.selectedSizeSignal.emit(items.formatSize(self.selectedSize))
             self.selectedFilesSignal.emit(self.selectedFiles)
             self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         return True
 
-    def getRootItem(self) -> FolderItem:
+    def getRootItem(self) -> items.FolderItem:
         return self.rootItem
 
     def selectLength(self) -> (int, int):
@@ -326,7 +326,7 @@ class TreeModelFile(QAbstractItemModel):
     def getTotalSizeFiles(self):
         with open(self.treeInput, "r") as jsonFile:
             treeDict = json.load(jsonFile)
-        return formatSize(treeDict["#_size"]), treeDict["#_nrFiles"]
+        return items.formatSize(treeDict["#_size"]), treeDict["#_nrFiles"]
 
     def __fullSearch(self, search: str, folder: dict):
         newBranch = {"#_size": 0, "#_nrFiles": 0, "#_files": []}

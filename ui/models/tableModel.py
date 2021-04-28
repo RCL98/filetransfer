@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QAbstractTableModel
 
-from items import formatSize
+from .items import formatSize
 
 
 class InconsistenciesTableModel(QAbstractTableModel):

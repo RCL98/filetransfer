@@ -239,8 +239,3 @@ class FolderItem:
 
     def getIcon(self):
         return self.icon
-
-
-# class TableRowItem:
-#     def __init__(self, rowData: tuple):
-#         self.data = [rowData[0], ]

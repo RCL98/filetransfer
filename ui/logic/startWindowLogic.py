@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from socket import gethostname
+from os.path import abspath
 
 from PyQt5.QtGui import QKeySequence
 
@@ -36,7 +37,7 @@ class StartWindow(QMainWindow, Ui_StartWindow):
         self.fileIcon = QtGui.QIcon()
         self.saveShortCut = QShortcut(QKeySequence("Ctrl+S"), self)
         self.saveAsShortCut = QShortcut(QKeySequence("Ctrl+A+S"), self)
-        self.currentTreeFile = "E:/MyApplication/FileTransferClient/files/user_tree.json"
+        self.currentTreeFile = abspath("./files/user_tree.json")
         self.fileTreeModel = None
         self.lastSaveFile = None
         self.fileSystem = FileSystem()

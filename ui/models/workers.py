@@ -2,13 +2,10 @@ import json
 import os
 from copy import deepcopy
 
-import pywintypes
-import winerror
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 
-from treeModel import FileSystem, TreeModelFile
-from pipes import ClientPipe
+from .treeModel import FileSystem, TreeModelFile
 
 
 class AddWorker(QtCore.QObject):
