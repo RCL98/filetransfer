@@ -2,10 +2,9 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 
-from eventTypes import UserTreeFileDispatchedEvent
+from eventTypes import UserTreeFileDispatchedEvent, UsersListDispatchedEvent
 from ui.logic.BrowseWidgetLogic import BrowseWidget
 from ui.design.mainWindowDesign import Ui_MainWindow
-from ui.logic.DownloadsWidget import DownloadsWidget
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -15,16 +14,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.window = window
         self.setupUi(window)
         self.browseWidget = BrowseWidget(self.browseTab)
-        self.downloadsTab = DownloadsWidget(self.downloadsTab)
+        # self.downloadsTab = DownloadsWidget(self.downloadsTab)
 
     def customEvent(self, event):
         print("Main customEvent: ", event.type())
         try:
-            if event.type() == UserTreeFileDispatchedEvent.idType:
-                eventData = event.getData()
-                print(f"Received : {eventData}")
-                if eventData != UserTreeFileDispatchedEvent.idType:
-                    self.browseWidget.renderTree(eventData)
+            eventData = event.getData()
+            print(f"Received : {eventData}")
+            if event.type() == UserTreeFileDispatchedEvent.idType and eventData != UserTreeFileDispatchedEvent.idType:
+                self.browseWidget.renderTree(eventData)
+            elif event.type() == UsersListDispatchedEvent.idType:
+                self.browseWidget.renderUsersList()
+
         except Exception as e:
             print(e)
 

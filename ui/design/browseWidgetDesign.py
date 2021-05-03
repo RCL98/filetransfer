@@ -13,8 +13,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_DownloadWidget(object):
     def setupUi(self, DownloadWidget):
-        DownloadWidget.setObjectName("BrowseWidget")
-        DownloadWidget.resize(944, 720)
+        DownloadWidget.setObjectName("DownloadWidget")
+        DownloadWidget.resize(1052, 720)
         self.verticalLayout = QtWidgets.QVBoxLayout(DownloadWidget)
         self.verticalLayout.setObjectName("verticalLayout")
         self.browseDownFrame = QtWidgets.QFrame(DownloadWidget)
@@ -131,17 +131,17 @@ class Ui_DownloadWidget(object):
         self.gridLayout_4 = QtWidgets.QGridLayout(self.listFrame)
         self.gridLayout_4.setContentsMargins(0, 0, 0, -1)
         self.gridLayout_4.setObjectName("gridLayout_4")
-        self.userListview = QtWidgets.QListView(self.listFrame)
+        self.userListView = QtWidgets.QListView(self.listFrame)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.userListview.sizePolicy().hasHeightForWidth())
-        self.userListview.setSizePolicy(sizePolicy)
-        self.userListview.setMinimumSize(QtCore.QSize(400, 0))
-        self.userListview.setSizeIncrement(QtCore.QSize(100, 0))
-        self.userListview.setBaseSize(QtCore.QSize(400, 0))
-        self.userListview.setObjectName("userListview")
-        self.gridLayout_4.addWidget(self.userListview, 0, 0, 1, 1)
+        sizePolicy.setHeightForWidth(self.userListView.sizePolicy().hasHeightForWidth())
+        self.userListView.setSizePolicy(sizePolicy)
+        self.userListView.setMinimumSize(QtCore.QSize(400, 0))
+        self.userListView.setSizeIncrement(QtCore.QSize(100, 0))
+        self.userListView.setBaseSize(QtCore.QSize(400, 0))
+        self.userListView.setObjectName("userListView")
+        self.gridLayout_4.addWidget(self.userListView, 0, 0, 1, 1)
         self.horizontalLayout.addWidget(self.listFrame)
         self.treeFrame = QtWidgets.QFrame(self.dataFrame)
         self.treeFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -214,15 +214,15 @@ class Ui_DownloadWidget(object):
 
     def retranslateUi(self, DownloadWidget):
         _translate = QtCore.QCoreApplication.translate
-        DownloadWidget.setWindowTitle(_translate("BrowseWidget", "Form"))
-        self.browseUsersLabel.setText(_translate("BrowseWidget", "Browse Users:"))
-        self.refreshUsersButton.setToolTip(_translate("BrowseWidget", "<html><head/><body><p align=\"center\"><span style=\" font-size:9pt;\">Refresh Users List</span></p></body></html>", "Refresh users list"))
-        self.browseFileLabel.setText(_translate("BrowseWidget", "Browse Files:"))
-        self.advSearchButton.setToolTip(_translate("BrowseWidget", "<html><head/><body><p align=\"center\"><span style=\" font-size:9pt;\">Advanced File Search</span></p></body></html>"))
-        self.downloadButton.setToolTip(_translate("BrowseWidget", "<html><head/><body><p align=\"center\"><span style=\" font-size:9pt;\">Donwload Selection</span></p></body></html>"))
-        self.nrUsersLabel.setText(_translate("BrowseWidget", "<html><head/><body><p><span style=\" font-size:10pt;\">Number of current users: 0 users</span></p></body></html>"))
-        self.totalFileLabel.setText(_translate("BrowseWidget", "Total Files: 0 files"))
-        self.totalSizeLabel.setText(_translate("BrowseWidget", "Total Size: 0 GB"))
+        DownloadWidget.setWindowTitle(_translate("DownloadWidget", "Form"))
+        self.browseUsersLabel.setText(_translate("DownloadWidget", "Browse Users:"))
+        self.refreshUsersButton.setToolTip(_translate("DownloadWidget", "<html><head/><body><p align=\"center\"><span style=\" font-size:9pt;\">Refresh Users List</span></p></body></html>", "Refresh users list"))
+        self.browseFileLabel.setText(_translate("DownloadWidget", "Browse Files:"))
+        self.advSearchButton.setToolTip(_translate("DownloadWidget", "<html><head/><body><p align=\"center\"><span style=\" font-size:9pt;\">Advanced File Search</span></p></body></html>"))
+        self.downloadButton.setToolTip(_translate("DownloadWidget", "<html><head/><body><p align=\"center\"><span style=\" font-size:9pt;\">Donwload Selection</span></p></body></html>"))
+        self.nrUsersLabel.setText(_translate("DownloadWidget", "<html><head/><body><p><span style=\" font-size:10pt;\">Number of current users: 0 users</span></p></body></html>"))
+        self.totalFileLabel.setText(_translate("DownloadWidget", "Total Files: 0 files"))
+        self.totalSizeLabel.setText(_translate("DownloadWidget", "Total Size: 0 GB"))
 
 
 if __name__ == "__main__":

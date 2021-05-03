@@ -3,7 +3,7 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 
-from eventTypes import UserTreeFileDispatchedEvent, pipeName
+from eventTypes import UserTreeFileDispatchedEvent, pipeName, UsersListDispatchedEvent
 from ui.logic.StartWindowLogic import StartWindow
 from ui.logic.MainWindowLogic import MainWindow
 from ui.models.pipes import ClientPipe
@@ -24,6 +24,7 @@ class AppInterface:
         self.goClientProcces = None
 
         self.gotUserTreeFileEvent = UserTreeFileDispatchedEvent()
+        self.gotUsersListFileEvent = UsersListDispatchedEvent()
         # self.app.aboutToQuit.connect(self.closeApp)
 
     # def closeApp(self):
@@ -50,9 +51,14 @@ class AppInterface:
                     packet = json.loads(pack.strip())
                     print(packet)
                     if packet['packet_type'] == 'RESPONSE_REQUEST_USER_FILE_STRUCTURE_PATH':
-                        print("Send EVENT!")
+                        print("Send File Tree EVENT!")
                         self.gotUserTreeFileEvent.setData(packet["file_path"])
                         self.app.sendEvent(self.mainWindow, self.gotUserTreeFileEvent)
+                    elif packet['packet_type'] == 'RESPONSE_CONNECTION' or packet["packet_type"] == "RESPONSE_REQUEST_USERS_LIST":
+                        print("Send User List EVENT!")
+                        # self.gotUsersListFileEvent.setData(packet["users_list"])
+                        self.app.sendEvent(self.mainWindow, self.gotUsersListFileEvent)
+
         except Exception as e:
             print(e)
 
@@ -114,7 +120,10 @@ class AppInterface:
         if resp == 0:
             if self.accepted:
                 self.startWindow = None
-                self.mainApp()
+                try:
+                    self.mainApp()
+                except Exception as e:
+                    raise e
         else:
             raise Exception(f"Something bad happened to the starting window! {resp}")
 

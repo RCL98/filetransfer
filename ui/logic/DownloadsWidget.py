@@ -4,7 +4,7 @@ import pandas as pd
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import QWidget
 
-from ui.logic.BrowseWidget import BrowseWidget
+from ui.logic.BrowseWidgetLogic import BrowseWidget
 from ui.models.tableModel import DownloadsTableModel
 from ui.models.treeModel import TreeModelFile
 
