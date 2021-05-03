@@ -9,12 +9,12 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import icons.icons
+
 
 class Ui_StartWindow(object):
     def setupUi(self, StartWindow):
         StartWindow.setObjectName("StartWindow")
-        StartWindow.resize(1127, 688)
+        StartWindow.resize(1143, 688)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/windowIcons/appIcon"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         StartWindow.setWindowIcon(icon)
@@ -276,7 +276,7 @@ class Ui_StartWindow(object):
         self.totalSizeLabel.setText(_translate("StartWindow", "Total Size: 0 GB"))
         self.totalFilesLabel.setText(_translate("StartWindow", "Total Files: 0"))
         self.noteLabel.setText(_translate("StartWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:10pt; text-decoration: underline;\">Note</span><span style=\" font-size:10pt;\">: You are not required to submit files for distribution in order to use the aplication.</span></p></body></html>"))
-        self.nameTextLabel.setText(_translate("StartWindow", "<html><head/><body><p align=\"center\">This is the name that will appear to the other users. By default the chosen name is the name of the machine.</p></body></html>"))
+        self.nameTextLabel.setText(_translate("StartWindow", "<html><head/><body><p align=\"center\">This is the name that will appear to the other users. By default the chosen name is the name of the machine. </p><p align=\"center\">Your name sholud <span style=\" text-decoration: underline;\">NOT</span> end with an underscore charachter \'_\'. </p></body></html>"))
         self.nameLabel.setText(_translate("StartWindow", "Name:"))
         self.acceptButton.setText(_translate("StartWindow", "Accept"))
         self.selectedSizeLabel.setText(_translate("StartWindow", "Selected Size: 0 GB"))

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1127</width>
+    <width>1143</width>
     <height>688</height>
    </rect>
   </property>
@@ -14,7 +14,7 @@
    <string>FileTransfer</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../icons/icons.qrc">
+   <iconset resource="../../icons/icons.qrc">
     <normaloff>:/windowIcons/appIcon</normaloff>:/windowIcons/appIcon</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -144,7 +144,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;This is the name that will appear to the other users. By default the chosen name is the name of the machine.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;This is the name that will appear to the other users. By default the chosen name is the name of the machine. &lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Your name sholud &lt;span style=&quot; text-decoration: underline;&quot;&gt;NOT&lt;/span&gt; end with an underscore charachter '_'. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="scaledContents">
                 <bool>true</bool>
@@ -260,7 +260,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/openIcon</normaloff>:/buttonIcons/openIcon</iconset>
                </property>
                <property name="iconSize">
@@ -286,7 +286,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/saveAsIcon</normaloff>:/buttonIcons/saveAsIcon</iconset>
                </property>
                <property name="iconSize">
@@ -306,7 +306,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/saveIcon</normaloff>:/buttonIcons/saveIcon</iconset>
                </property>
                <property name="iconSize">
@@ -332,7 +332,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/undoIcon</normaloff>:/buttonIcons/undoIcon</iconset>
                </property>
                <property name="iconSize">
@@ -358,7 +358,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/redoIcon</normaloff>:/buttonIcons/redoIcon</iconset>
                </property>
                <property name="iconSize">
@@ -384,7 +384,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/addIcon</normaloff>:/buttonIcons/addIcon</iconset>
                </property>
                <property name="iconSize">
@@ -410,7 +410,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="../icons/icons.qrc">
+                <iconset resource="../../icons/icons.qrc">
                  <normaloff>:/buttonIcons/deleteIcon</normaloff>:/buttonIcons/deleteIcon</iconset>
                </property>
                <property name="iconSize">
@@ -525,7 +525,7 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
-  <include location="../icons/icons.qrc"/>
+  <include location="../../icons/icons.qrc"/>
  </resources>
  <connections/>
 </ui>

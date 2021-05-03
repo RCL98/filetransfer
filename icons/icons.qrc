@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="buttonIcons">
+    <file alias="advancedSearchBlackIcon">icons8-advanced-search-32_black.png</file>
+    <file alias="advancedSearchIcon">icons8-advanced-search-32.png</file>
+    <file alias="refreshIcon">icons8-refresh-32.png</file>
     <file alias="downloadIcon">icons8-download-24.png</file>
     <file alias="openIcon">icons8-open-file-folder-48.png</file>
     <file alias="deleteIcon">icons8-minus-48.png</file>

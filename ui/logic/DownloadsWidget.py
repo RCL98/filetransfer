@@ -32,7 +32,8 @@ class DownloadsWidget(QWidget):
     def renderTree(self, index):
         t = self.downsTable.model().data(index,
                                         DownloadsTableModel._RetrieveDownFile)
-        t = abspath("./files/downloads/" + t)
+        print(t)
+        t = abspath("../../files/downloads/" + t)
         self.fileTreeModel = TreeModelFile(treeInput=t,
                                            foldIcon=self.foldIcon, fileIcon=self.fileIcon)
         # self.fileTreeView.setModel(self.fileTreeModel)

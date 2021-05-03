@@ -12,8 +12,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFrame, QShortcut
 from PyQt5.QtWidgets import QMainWindow
 
-from ui.startWindowDesign import Ui_StartWindow
-import icons.icons
+from ui.design.startWindowDesign import Ui_StartWindow
 
 
 class VLine(QFrame):
@@ -24,7 +23,7 @@ class VLine(QFrame):
 
 
 class StartWindow(QMainWindow, Ui_StartWindow):
-    acceptState = QtCore.pyqtSignal(bool)
+    acceptState = QtCore.pyqtSignal(dict)
 
     def __init__(self, window):
         super(StartWindow, self).__init__(window)
@@ -115,12 +114,13 @@ class StartWindow(QMainWindow, Ui_StartWindow):
         self.enableButtons()
 
     def acceptAction(self):
-        # mainWin = QtWidgets.QMainWindow()
-        # mainWindow.Ui_MainWindow(mainWin)
-        self.acceptState.emit(True)
-        self.hide()
-        self.window.close()
-        # mainWin.show()
+        name = self.nameEdit.text() if self.nameEdit.text() != "" else gethostname()
+        if name[-1] != '_':
+            acceptMessage = {'packet_type': 'REQUEST_CONNECTION', 'name': name,
+                             'path_struct_data': self.currentTreeFile}
+            self.acceptState.emit(acceptMessage)
+            self.hide()
+            self.window.close()
 
     def disableButtons(self):
         self.addButton.setEnabled(False)

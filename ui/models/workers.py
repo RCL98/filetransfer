@@ -4,7 +4,9 @@ from copy import deepcopy
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
+from win32ctypes.pywin32 import pywintypes
 
+from .pipes import ClientPipe
 from .treeModel import FileSystem, TreeModelFile
 
 
@@ -286,26 +288,32 @@ class DownLoadWorker(QtCore.QObject):
         self.finished.emit()
 
 
-# class PipeWorker(QtCore.QObject):
-#     def __init__(self, pipeName=None, readBuffSize=8192):
-#         super(PipeWorker, self).__init__()
-#         self.pipeName = pipeName
-#         self.readBuffSize = readBuffSize
-#         self.pipe = None
-#
-#     def run(self):
-#         self.pipe = ClientPipe(self.pipeName, self.readBuffSize)
-#         self.pipe.connectPipe()
-#         # print("Pipe was connected!")
-#         try:
-#             while True:
-#                 message = self.pipe.readMessage()
-#         except pywintypes.error as e:
-#             if e.args[0] == 2:
-#                 print("no pipe, trying again in a sec")
-#                 time.sleep(1)
-#             elif e.args[0] == 109:
-#                 print("broken pipe, bye bye")
+class PipeClientWorker(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+
+    def __init__(self, pipeName: str, message: str):
+        super(PipeClientWorker, self).__init__()
+        self.pipeName = pipeName
+        self.message = message
+        self.pipe = None
+
+    def run(self):
+        self.pipe = ClientPipe(self.pipeName)
+        while True:
+            self.pipe.connectPipe()
+            # print("Pipe was connected!")
+            try:
+                self.pipe.sendMessage(self.message)
+                self.pipe.closePipe()
+                break
+            except pywintypes.error as e:
+                if e.args[0] == 2:
+                    print("no pipe, trying again in a sec")
+                elif e.args[0] == 109:
+                    print("Pipe Closed")
+        self.finished.emit()
+
+# class LoggerWorker:
 
 
 # class FilterWorker(QtCore.QObject):

@@ -1,7 +1,7 @@
 import sys
 import time
 
-import pywintypes
+from win32ctypes.pywin32 import pywintypes
 import win32file
 import win32pipe
 import winerror
@@ -90,7 +90,7 @@ class ClientPipe:
         if not self.pipe_open:
             try:
                 self.pipe_handle = win32file.CreateFile(self.pipe_name,
-                                                        win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                                                        win32file.GENERIC_WRITE,  # win32file.GENERIC_READ |
                                                         0, None, win32file.OPEN_EXISTING,
                                                         0, None)
                 win32pipe.SetNamedPipeHandleState(self.pipe_handle,
@@ -125,8 +125,8 @@ class ClientPipe:
             return 0
         return nBytes
 
-    # def closePipe(self):
-    #     win32file.CloseHandle(self.pipe_handle)
+    def closePipe(self):
+        win32file.CloseHandle(self.pipe_handle)
 
     def handleError(self, result):
         reset_pipe = False
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         print("need s or c as argument")
     elif sys.argv[1] == "s":
         # pipe_server()
-        svp = ServerPipe("testPipe", 2048, 128)
+        svp = ServerPipe("goPipe", 2048, 128)
         svp.createPipe()
         print("Pipe created!")
         svp.waitConnection()
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         print("Done server!")
     elif sys.argv[1] == "c":
         # pipe_client()
-        clp = ClientPipe("testPipe", 16)
+        clp = ClientPipe("goPipe", 16)
         clp.connectPipe()
         print("Pipe was connected!")
         try:
@@ -175,11 +175,11 @@ if __name__ == '__main__':
                 smsg = f"Client message: received {msg}"
                 n = clp.sendMessage(smsg)
                 print(n)
-        except pywintypes.error as e:
-            if e.args[0] == 2:
+        except pywintypes.error as er:
+            if er.args[0] == 2:
                 print("no pipe, trying again in a sec")
                 time.sleep(1)
-            elif e.args[0] == 109:
+            elif er.args[0] == 109:
                 print("broken pipe, bye bye")
     else:
         print(f"no can do: {sys.argv[1]}")
